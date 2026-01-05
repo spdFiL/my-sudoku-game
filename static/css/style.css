@@ -1,0 +1,241 @@
+/* ===== GLOBAL & RESET ===== */
+:root {
+    --primary-color: #4a90e2;
+    --primary-hover: #357abd;
+    --accent-color: #388e3c;
+    --danger-color: #e53935;
+    --text-dark: #2c3e50;
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --grid-line-bold: 3px solid #2c3e50;
+    --grid-line-thin: 1px solid #cbd5e0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-dark);
+}
+
+/* ===== CONTAINER ===== */
+.container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 95%;
+    max-width: 480px;
+}
+
+h1 {
+    font-size: 26px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+/* ===== TOP BAR (Stats & Controls) ===== */
+.top-bar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.top-bar .stats {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 14px;
+    background: #f8fafc;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.top-bar .controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.top-bar select, .top-bar .controls button {
+    flex: 1;
+    font-size: 14px;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* ===== BOARD (Оновлена логіка) ===== */
+.board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1 / 1;
+    background: #fff;
+    margin-bottom: 20px;
+    
+    /* Основна товста рамка навколо всього поля */
+    border: 2.5px solid #2c3e50;
+    box-shadow: 0 0 0 1px #2c3e50; /* Додатковий тонкий контур для чіткості */
+}
+
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    
+    /* Тонкі сірі межі між усіма клітинками */
+    border-right: 1px solid #d1d5db;
+    border-bottom: 1px solid #d1d5db;
+}
+
+/* Прибираємо межі у крайніх клітинок, щоб вони не конфліктували з рамкою .board */
+.cell:nth-child(9n) {
+    border-right: none;
+}
+.cell:nth-child(n+73) {
+    border-bottom: none;
+}
+
+/* ===== ЖИРНІ ЛІНІЇ 3x3 (Виправлено) ===== */
+
+/* Вертикальні лінії: додаємо після 3-ї та 6-ї клітинок */
+.cell:nth-child(3n):not(:nth-child(9n)) {
+    border-right: 2.5px solid #2c3e50;
+}
+
+/* Горизонтальні лінії: додаємо під 3-м та 6-м рядами */
+/* Клітинки 19-27 та 46-54 */
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2.5px solid #2c3e50;
+}
+
+/* Ефект при виборі клітинки */
+.cell:hover:not(.fixed) {
+    background-color: #f8fafc;
+}
+
+.cell.selected {
+    background-color: #bbdefb !important;
+    outline: 2px solid #4a90e2; /* Виділення поверх меж */
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+/* ===== NUMBER PAD ===== */
+.numbers {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.numbers button {
+    height: 42px;
+    font-size: 18px;
+    background-color: #f1f5f9;
+    color: var(--text-dark);
+}
+
+.numbers .btn-delete {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* ===== BOTTOM BUTTONS ===== */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+button, select {
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-hint { background-color: var(--accent-color); color: white; flex: 1; }
+.btn-check { background-color: var(--danger-color); color: white; flex: 1; }
+
+/* АНІМАЦІЯ */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* АДАПТИВНІСТЬ */
+@media (max-width: 450px) {
+    .container { padding: 15px; border-radius: 0; }
+    .cell { font-size: 18px; }
+}
+
+/* ===== MOBILE OPTIMIZATION ===== */
+@media (max-width: 480px) {
+    body {
+        align-items: flex-start; /* Щоб контент починався зверху */
+        padding-top: 20px;
+    }
+
+    .container {
+        width: 100%;
+        padding: 15px 10px;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent; /* Робимо фон чистішим */
+    }
+
+    .board {
+        max-width: 100%; /* Дошка займає всю ширину */
+        border-width: 2px;
+    }
+
+    .cell {
+        font-size: 18px; /* Менший шрифт для маленьких екранів */
+        height: auto;
+    }
+
+    .numbers {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+    }
+
+    .numbers button {
+        height: 50px; /* Збільшена зона дотику для пальців */
+        font-size: 20px;
+    }
+
+    .action-buttons {
+        margin-top: 10px;
+    }
+}
+
+/* Вимикаємо стандартне виділення тексту при натисканні */
+.cell, button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}

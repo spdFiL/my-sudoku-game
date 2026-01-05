@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Судоку</h1>
+
+    <div class="top-bar">
+        <div class="stats">
+            <span>⏱ <b id="timer">00:00</b></span>
+            <span>💡 <b id="hints">3</b></span>
+            <span>🏆 <b id="wins">{{ wins }}</b></span>
+        </div>
+
+        <div class="controls">
+            <select id="difficulty">
+                <option value="easy">Легко</option>
+                <option value="medium" selected>Середньо</option>
+                <option value="hard">Складно</option>
+            </select>
+
+            <button onclick="newGame()">Нова гра</button>
+        </div>
+    </div>
+
+    <div id="board" class="board"></div>
+
+    <div class="numbers">
+        <button class="btn-delete" onclick="setNumber(0)">✖</button>
+        <button onclick="setNumber(1)">1</button>
+        <button onclick="setNumber(2)">2</button>
+        <button onclick="setNumber(3)">3</button>
+        <button onclick="setNumber(4)">4</button>
+        <button onclick="setNumber(5)">5</button>
+        <button onclick="setNumber(6)">6</button>
+        <button onclick="setNumber(7)">7</button>
+        <button onclick="setNumber(8)">8</button>
+        <button onclick="setNumber(9)">9</button>
+    </div>
+ 
+    <div class="action-buttons">
+        <button class="btn-hint" onclick="useHint()">Підказка</button>
+        <button class="btn-check" onclick="checkSolution()">Перевірити</button>
+    </div>
+    
+</div>
+
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
