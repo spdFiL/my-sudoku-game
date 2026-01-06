@@ -1,14 +1,14 @@
 let board = [];
 let selected = null;
 let hints = 3;
-let lives = 3; // Додано змінну життів
+let lives = 3;
 let timerId = null;
 let time = 0;
 let fixedCells = new Set();
 let isGameOver = false;
 let isHintBusy = false;
+let completedNumbers = new Set(); // Зберігає цифри, яких вже є 9 штук
 
-// Функція оновлення сердечок на екрані
 function resetLivesUI() {
     lives = 3;
     const hearts = document.querySelectorAll('.heart');
@@ -20,8 +20,14 @@ function newGame() {
     isGameOver = false;
     isHintBusy = false;
     selected = null;
+    completedNumbers.clear();
     
-    // Скидаємо життя при кожній новій грі
+    // Скидаємо кнопки
+    for (let i = 1; i <= 9; i++) {
+        const btn = document.getElementById(`btn-num-${i}`);
+        if (btn) btn.classList.remove('btn-disabled');
+    }
+
     resetLivesUI();
     
     fetch('/new_game', {
@@ -36,6 +42,7 @@ function newGame() {
         board.flat().forEach((v, i) => { if (v !== 0) fixedCells.add(i); });
         hints = 3;
         document.getElementById('hints').textContent = hints;
+        updateNumberStatus(false); // Оновлюємо статус, але без анімації на старті
         drawBoard();
         startTimer();
     });
@@ -47,6 +54,12 @@ function drawBoard() {
     
     const selRow = selected !== null ? Math.floor(selected / 9) : null;
     const selCol = selected !== null ? selected % 9 : null;
+    
+    // Отримуємо значення вибраної клітинки для підсвічування однакових
+    let selectedValue = null;
+    if (selected !== null) {
+        selectedValue = board[selRow][selCol];
+    }
 
     board.flat().forEach((val, i) => {
         const r = Math.floor(i / 9);
@@ -57,11 +70,23 @@ function drawBoard() {
         if (val !== 0) {
             cell.textContent = val;
             cell.classList.add(fixedCells.has(i) ? 'fixed' : 'user-input');
+            
+            // Якщо цифра завершена, додаємо їй клас для статики (щоб лишалась зеленою)
+            if (completedNumbers.has(val)) {
+                cell.classList.add('fixed-done'); 
+            }
         }
 
-        // Візуальний мачинг (виділення рядків/стовпців)
-        if (selected === i) cell.classList.add('selected');
-        else if (r === selRow || c === selCol) cell.classList.add('highlight');
+        // Логіка підсвічування
+        if (selected === i) {
+            cell.classList.add('selected');
+        } else if (selectedValue !== null && val === selectedValue && val !== 0) {
+            // Підсвічуємо всі такі самі цифри
+            cell.classList.add('same-number');
+        } else if (r === selRow || c === selCol) {
+            // Підсвічуємо хрест (рядок і стовпець)
+            cell.classList.add('highlight');
+        }
 
         cell.onclick = () => {
             if (!isGameOver) {
@@ -73,16 +98,68 @@ function drawBoard() {
     });
 }
 
+// Функція для перевірки, чи всі 9 цифр розставлені
+function updateNumberStatus(animate = true) {
+    const counts = Array(10).fill(0);
+    board.flat().forEach(num => {
+        if (num !== 0) counts[num]++;
+    });
+
+    for (let i = 1; i <= 9; i++) {
+        const btn = document.getElementById(`btn-num-${i}`);
+        
+        // Якщо цифри стало 9 штук
+        if (counts[i] >= 9) {
+            // Якщо це сталося вперше (ми ще не зафіксували це)
+            if (!completedNumbers.has(i)) {
+                completedNumbers.add(i);
+                btn.classList.add('btn-disabled'); // Робимо кнопку сірою
+                
+                if (animate) {
+                    animateCompletedNumber(i);
+                }
+            }
+        } else {
+            // Якщо цифру видалили і їх стало менше 9, повертаємо активність
+            if (completedNumbers.has(i)) {
+                completedNumbers.delete(i);
+                btn.classList.remove('btn-disabled');
+            }
+        }
+    }
+}
+
+// Функція анімації для завершеної цифри
+function animateCompletedNumber(num) {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach((cell, index) => {
+        const r = Math.floor(index / 9);
+        const c = index % 9;
+        if (board[r][c] === num) {
+            cell.classList.add('completed-set');
+            // Прибираємо клас анімації після завершення
+            setTimeout(() => {
+                cell.classList.remove('completed-set');
+            }, 800); // Час має збігатися з тривалістю анімації в CSS
+        }
+    });
+}
+
 function setNumber(n) {
     if (isGameOver || selected === null || fixedCells.has(selected)) return;
+    
+    // Якщо така цифра вже зібрана (9 штук), забороняємо ставити (окрім стирання 0)
+    if (n !== 0 && completedNumbers.has(n)) return;
+
     const r = Math.floor(selected / 9);
     const c = selected % 9;
     
-    // Якщо клікнули ту саму цифру, що вже стоїть — нічого не робимо
+    // Якщо клікаємо ту ж саму цифру — ігноруємо
     if (board[r][c] === n) return;
     
     board[r][c] = n;
     
+    // Спочатку відправляємо запит на сервер
     fetch('/check_cell', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -90,34 +167,37 @@ function setNumber(n) {
     })
     .then(res => res.json())
     .then(data => {
-        drawBoard();
+        // 1. Спочатку перемальовуємо дошку
+        drawBoard(); 
         
-        // Логіка перевірки помилки та втрати життя
+        // 2. Тепер, коли HTML оновлено, запускаємо перевірку на 9 цифр і анімацію
+        updateNumberStatus(true);
+
         if (n !== 0 && !data.correct) {
-            // Додаємо червоний колір клітинці
             const cells = document.querySelectorAll('.cell');
-            cells[selected].classList.add('error');
+            if (cells[selected]) {
+                cells[selected].classList.add('error');
+            }
             
-            // Зменшуємо кількість життів
             lives--;
             const hearts = document.querySelectorAll('.heart:not(.lost)');
             if (hearts.length > 0) {
                 hearts[hearts.length - 1].classList.add('lost');
             }
             
-            // Анімація трясіння екрана
             const gameContainer = document.querySelector('.container');
             gameContainer.classList.add('shake-screen');
             setTimeout(() => gameContainer.classList.remove('shake-screen'), 400);
 
-            // Перевірка на програш
+            // ЛОГІКА ПРОГРАШУ
             if (lives <= 0) {
                 isGameOver = true;
                 clearInterval(timerId);
+                
+                // Перенаправлення на сторінку поразки
                 setTimeout(() => {
-                    alert("💔 Гра закінчена! У вас закінчилися життя.");
-                    newGame(); // Автоматично починаємо нову гру
-                }, 100);
+                    window.location.href = "/result?status=lose";
+                }, 500);
             }
         }
     });
@@ -138,7 +218,9 @@ function getHint() {
             board[data.row][data.col] = data.value;
             hints--;
             document.getElementById('hints').textContent = hints;
-            drawBoard();
+            
+            drawBoard(); // Спочатку малюємо
+            updateNumberStatus(true); // Потім анімуємо, якщо це була остання цифра
         }
     })
     .finally(() => isHintBusy = false);
@@ -156,10 +238,15 @@ function checkSolution() {
         if (data.correct) {
             isGameOver = true;
             clearInterval(timerId);
-            document.getElementById('wins').textContent = data.wins;
-            alert("🎉 Перемога! Рахунок оновлено.");
+            
+            // ЛОГІКА ПЕРЕМОГИ
+            // Перенаправлення на сторінку перемоги
+            setTimeout(() => {
+                window.location.href = "/result?status=win";
+            }, 500);
+            
         } else {
-            alert("❌ Помилка в рішенні.");
+            alert("❌ Помилка в рішенні. Перевірте ще раз!");
         }
     });
 }

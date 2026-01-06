@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат гри</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container result-container">
+    {% if status == 'win' %}
+        <div class="result-header win">
+            <h1>🎉 ПЕРЕМОГА! 🎉</h1>
+            <p>Ви чудово впоралися!</p>
+        </div>
+    {% else %}
+        <div class="result-header lose">
+            <h1>💔 ГРУ ЗАКІНЧЕНО</h1>
+            <p>Не засмучуйтесь, спробуйте ще раз!</p>
+        </div>
+    {% endif %}
+
+    <div class="current-score">
+        <span>Ваш загальний рахунок перемог: <b>{{ wins }}</b></span>
+    </div>
+
+    <div class="leaderboard">
+        <h2>🏆 Таблиця лідерів</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Гравець</th>
+                    <th>Час</th>
+                    <th>Перемог</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in leaderboard %}
+                <tr>
+                    <td>{{ player.name }}</td>
+                    <td>{{ player.time_str }}</td>
+                    <td>{{ player.wins }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="action-buttons">
+        <a href="{{ url_for('index') }}" class="btn-new-game">Грати знову</a>
+    </div>
+</div>
+
+</body>
+</html>
