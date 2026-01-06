@@ -11,7 +11,7 @@
 }
 
 * {
-    box-sizing: border-box;
+    box-sizing: border-box; /* Гарантує, що межі не розширюють блоки */
     margin: 0;
     padding: 0;
 }
@@ -78,70 +78,69 @@ h1 {
     color: white;
 }
 
-/* ===== BOARD (Оновлена логіка) ===== */
+/* ===== BOARD (Виправлено з'їжджання та додано підсвічування) ===== */
 .board {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
-    grid-template-rows: repeat(9, 1fr);
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     aspect-ratio: 1 / 1;
-    background: #fff;
+    background: #2c3e50; /* Колір для жирних ліній */
     margin-bottom: 20px;
-    
-    /* Основна товста рамка навколо всього поля */
-    border: 2.5px solid #2c3e50;
-    box-shadow: 0 0 0 1px #2c3e50; /* Додатковий тонкий контур для чіткості */
+    border: var(--grid-line-bold);
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
 }
 
 .cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: clamp(16px, 5vw, 24px);
     cursor: pointer;
-    user-select: none;
-    
-    /* Тонкі сірі межі між усіма клітинками */
-    border-right: 1px solid #d1d5db;
-    border-bottom: 1px solid #d1d5db;
+    background-color: #fff;
+    border: 0.5px solid #cbd5e0; /* Тонка сітка */
+    transition: background-color 0.1s ease;
 }
 
-/* Прибираємо межі у крайніх клітинок, щоб вони не конфліктували з рамкою .board */
-.cell:nth-child(9n) {
-    border-right: none;
-}
-.cell:nth-child(n+73) {
-    border-bottom: none;
+/* Підсвічування перехрестя (рядки та стовпці) */
+.cell.highlight {
+    background-color: #f1f5f9 !important;
 }
 
-/* ===== ЖИРНІ ЛІНІЇ 3x3 (Виправлено) ===== */
-
-/* Вертикальні лінії: додаємо після 3-ї та 6-ї клітинок */
-.cell:nth-child(3n):not(:nth-child(9n)) {
-    border-right: 2.5px solid #2c3e50;
-}
-
-/* Горизонтальні лінії: додаємо під 3-м та 6-м рядами */
-/* Клітинки 19-27 та 46-54 */
+/* Жирні лінії 3x3 (без зміни розміру клітинки) */
+.cell:nth-child(3n):not(:nth-child(9n)) { border-right: var(--grid-line-bold); }
 .cell:nth-child(n+19):nth-child(-n+27),
-.cell:nth-child(n+46):nth-child(-n+54) {
-    border-bottom: 2.5px solid #2c3e50;
+.cell:nth-child(n+46):nth-child(-n+54) { border-bottom: var(--grid-line-bold); }
+
+/* Стани клітинок */
+.cell.fixed {
+    background-color: #f8fafc;
+    font-weight: bold;
+    color: #1e293b;
+    cursor: default;
 }
 
-/* Ефект при виборі клітинки */
-.cell:hover:not(.fixed) {
-    background-color: #f8fafc;
+.cell.user-input {
+    color: var(--primary-color);
 }
 
 .cell.selected {
     background-color: #bbdefb !important;
-    outline: 2px solid #4a90e2; /* Виділення поверх меж */
-    outline-offset: -2px;
-    z-index: 1;
+    outline: 3px solid var(--primary-color) !important;
+    outline-offset: -3px;
+    z-index: 5;
 }
 
-/* ===== NUMBER PAD ===== */
+.cell.error {
+    color: var(--danger-color) !important;
+    background-color: #fee2e2 !important;
+    animation: shake 0.4s;
+}
+
+/* ===== NUMBER PAD & BUTTONS ===== */
 .numbers {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -151,18 +150,15 @@ h1 {
 }
 
 .numbers button {
-    height: 42px;
+    height: 45px;
     font-size: 18px;
     background-color: #f1f5f9;
-    color: var(--text-dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
 }
 
-.numbers .btn-delete {
-    background-color: #fef3c7;
-    color: #92400e;
-}
-
-/* ===== BOTTOM BUTTONS ===== */
 .action-buttons {
     display: flex;
     gap: 12px;
@@ -178,8 +174,10 @@ button, select {
     transition: all 0.2s;
 }
 
-.btn-hint { background-color: var(--accent-color); color: white; flex: 1; }
-.btn-check { background-color: var(--danger-color); color: white; flex: 1; }
+.btn-hint { background-color: var(--accent-color); color: white; flex: 1; padding: 12px; }
+.btn-check { background-color: var(--danger-color); color: white; flex: 1; padding: 12px; }
+
+button:active { transform: scale(0.98); opacity: 0.9; }
 
 /* АНІМАЦІЯ */
 @keyframes shake {
@@ -188,54 +186,48 @@ button, select {
     75% { transform: translateX(4px); }
 }
 
-/* АДАПТИВНІСТЬ */
-@media (max-width: 450px) {
-    .container { padding: 15px; border-radius: 0; }
-    .cell { font-size: 18px; }
-}
-
-/* ===== MOBILE OPTIMIZATION ===== */
 @media (max-width: 480px) {
-    body {
-        align-items: flex-start; /* Щоб контент починався зверху */
-        padding-top: 20px;
-    }
-
-    .container {
-        width: 100%;
-        padding: 15px 10px;
-        border-radius: 0;
-        box-shadow: none;
-        background: transparent; /* Робимо фон чистішим */
-    }
-
-    .board {
-        max-width: 100%; /* Дошка займає всю ширину */
-        border-width: 2px;
-    }
-
-    .cell {
-        font-size: 18px; /* Менший шрифт для маленьких екранів */
-        height: auto;
-    }
-
-    .numbers {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 5px;
-    }
-
-    .numbers button {
-        height: 50px; /* Збільшена зона дотику для пальців */
-        font-size: 20px;
-    }
-
-    .action-buttons {
-        margin-top: 10px;
-    }
+    .container { width: 100%; padding: 15px 10px; border-radius: 0; }
+    .cell { font-size: 18px; }
+    .numbers button { height: 50px; }
 }
 
-/* Вимикаємо стандартне виділення тексту при натисканні */
-.cell, button {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+/* ===== СИСТЕМА ЖИТТЯ ===== */
+.lives-container {
+    display: flex;
+    gap: 5px;
+    font-size: 18px;
+}
+
+.heart {
+    display: inline-block;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: heartBeat 2s infinite;
+}
+
+/* Анімація пульсації */
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.2); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.15); }
+    60% { transform: scale(1); }
+}
+
+/* Анімація втрати життя */
+.heart.lost {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+    filter: grayscale(100%);
+}
+
+/* Ефект трясіння при помилці */
+.shake-screen {
+    animation: screenShake 0.4s;
+}
+
+@keyframes screenShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
 }

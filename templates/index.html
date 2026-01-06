@@ -14,18 +14,27 @@
     <div class="top-bar">
         <div class="stats">
             <span>⏱ <b id="timer">00:00</b></span>
+            
+            <div id="lives-container" class="lives-container">
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+            </div>
+
             <span>💡 <b id="hints">3</b></span>
             <span>🏆 <b id="wins">{{ wins }}</b></span>
         </div>
 
         <div class="controls">
-            <select id="difficulty">
-                <option value="easy">Легко</option>
-                <option value="medium" selected>Середньо</option>
-                <option value="hard">Складно</option>
-            </select>
-
-            <button onclick="newGame()">Нова гра</button>
+            <div class="difficulty-wrapper">
+                <span class="difficulty-label">Складність:</span>
+                <select id="difficulty">
+                    <option value="easy">Легко</option>
+                    <option value="medium" selected>Середньо</option>
+                    <option value="hard">Складно</option>
+                </select>
+            </div>
+            <button class="btn-new-game" onclick="newGame()">Нова гра</button>
         </div>
     </div>
 
@@ -45,8 +54,8 @@
     </div>
  
     <div class="action-buttons">
-        <button class="btn-hint" onclick="useHint()">Підказка</button>
-        <button class="btn-check" onclick="checkSolution()">Перевірити</button>
+        <button class="btn-hint" onclick="getHint()">💡 Підказка</button>
+        <button class="btn-check" onclick="checkSolution()">✅ Перевірити</button>
     </div>
     
 </div>
