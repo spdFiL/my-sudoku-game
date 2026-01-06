@@ -4,15 +4,16 @@ from flask_sqlalchemy import SQLAlchemy
 from sudoku_generator import SudokuGenerator
 import random
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta # <--- Додано timedelta
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
+# ===== НАЛАШТУВАННЯ СЕСІЇ (Щоб ім'я пам'яталось довго) =====
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365) # Пам'ятати 1 рік
+
 # ===== НАЛАШТУВАННЯ БАЗИ ДАНИХ =====
-# Беремо посилання на базу з Render, або створюємо локальну SQLite
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///local_database.db')
-# Виправлення для Render (там старий формат postgres://, а треба postgresql://)
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -22,7 +23,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 sudoku_gen = SudokuGenerator()
 
-# ===== МОДЕЛЬ ТАБЛИЦІ (Структура бази даних) =====
 class PlayerScore(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -30,7 +30,6 @@ class PlayerScore(db.Model):
     time_str = db.Column(db.String(20))
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Створення таблиць при запуску (якщо їх немає)
 with app.app_context():
     db.create_all()
 
@@ -40,7 +39,20 @@ with app.app_context():
 def index():
     if 'wins' not in session:
         session['wins'] = 0
-    return render_template('index.html', wins=session['wins'])
+    # Передаємо ім'я гравця на сторінку (якщо воно є)
+    player_name = session.get('player_name', None)
+    return render_template('index.html', wins=session['wins'], player_name=player_name)
+
+# НОВИЙ МАРШРУТ: Збереження імені
+@app.route('/set_name', methods=['POST'])
+def set_name():
+    data = request.get_json()
+    name = data.get('name')
+    if name:
+        session['player_name'] = name
+        session.permanent = True # Робимо сесію постійною
+        return jsonify({'success': True})
+    return jsonify({'success': False})
 
 @app.route('/new_game', methods=['POST'])
 def new_game():
@@ -93,7 +105,6 @@ def check_solution():
             session['wins'] = session.get('wins', 0) + 1
             session['game_over_flag'] = True
             
-            # Розрахунок часу
             start = session.get('start_time', datetime.now().timestamp())
             end = datetime.now().timestamp()
             duration_seconds = int(end - start)
@@ -101,9 +112,10 @@ def check_solution():
             secs = duration_seconds % 60
             time_str = f"{mins:02}:{secs:02}"
             
-            # === ЗБЕРЕЖЕННЯ В БАЗУ ДАНИХ ===
-            # Тут ми поки пишемо "Гравець", але в майбутньому можна додати поле вводу імені
-            new_score = PlayerScore(name='Гравець (Web)', wins=session['wins'], time_str=time_str)
+            # ВИКОРИСТОВУЄМО ЗБЕРЕЖЕНЕ ІМ'Я
+            name = session.get('player_name', 'Невідомий')
+            
+            new_score = PlayerScore(name=name, wins=session['wins'], time_str=time_str)
             db.session.add(new_score)
             db.session.commit()
             
@@ -115,13 +127,8 @@ def check_solution():
 @app.route('/result')
 def result():
     status = request.args.get('status', 'win')
-    
-    # Отримуємо ТОП-10 результатів з бази даних
-    # Сортуємо: спочатку у кого більше перемог, потім у кого кращий час (тут спрощено за ID)
     leaderboard_data = PlayerScore.query.order_by(PlayerScore.wins.desc()).limit(10).all()
-    
     return render_template('result.html', status=status, wins=session.get('wins', 0), leaderboard=leaderboard_data)
 
 if __name__ == '__main__':
-    # Для локального запуску
     app.run(debug=True)

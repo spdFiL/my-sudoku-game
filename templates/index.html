@@ -22,7 +22,7 @@
             </div>
 
             <span>💡 <b id="hints">3</b></span>
-            <span>🏆 <b id="wins">{{ wins }}</b></span>
+            <span>🏆 {{ player_name if player_name else '' }} <b id="wins">{{ wins }}</b></span>
         </div>
 
         <div class="controls">
@@ -59,6 +59,20 @@
     </div>
     
 </div>
+
+<div id="registration-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Вітаємо в Sudoku!</h2>
+        <p>Введіть ваш нікнейм для таблиці рекордів:</p>
+        <input type="text" id="player-name-input" placeholder="Ваше ім'я..." maxlength="15">
+        <button onclick="savePlayerName()">Почати гру</button>
+    </div>
+</div>
+
+<script>
+    // Ця змінна створюється сервером і стає доступною для game.js
+    const savedPlayerName = "{{ player_name if player_name else '' }}";
+</script>
 
 <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 </body>

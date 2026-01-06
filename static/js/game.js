@@ -263,3 +263,44 @@ function startTimer() {
 }
 
 document.addEventListener('DOMContentLoaded', newGame);
+
+
+// ... весь твій попередній код ...
+
+// ===== ЛОГІКА РЕЄСТРАЦІЇ =====
+
+function checkRegistration() {
+    // savedPlayerName приходить з HTML (з Python)
+    if (!savedPlayerName || savedPlayerName === '') {
+        document.getElementById('registration-modal').style.display = 'flex';
+    }
+}
+
+function savePlayerName() {
+    const nameInput = document.getElementById('player-name-input');
+    const name = nameInput.value.trim();
+
+    if (name.length < 2) {
+        alert("Ім'я має бути мінімум 2 символи!");
+        return;
+    }
+
+    fetch('/set_name', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Приховуємо модальне вікно
+            document.getElementById('registration-modal').style.display = 'none';
+        }
+    });
+}
+
+// Модифікуємо запуск гри
+document.addEventListener('DOMContentLoaded', () => {
+    newGame();
+    checkRegistration(); // <-- Перевіряємо реєстрацію при старті
+});
