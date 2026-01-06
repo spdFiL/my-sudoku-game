@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Адмін-панель Sudoku</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #333; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .btn-delete {
+            background: #e53935; color: white; text-decoration: none;
+            padding: 8px 12px; border-radius: 4px; font-size: 14px;
+        }
+        .btn-delete:hover { background: #c62828; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+
+    <h1>🔧 Керування гравцями</h1>
+    <p>Всього записів: {{ players|length }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ім'я</th>
+                <th>Перемог</th>
+                <th>Час (останній)</th>
+                <th>Дія</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+            <tr>
+                <td>{{ player.id }}</td>
+                <td><b>{{ player.name }}</b></td>
+                <td>{{ player.wins }}</td>
+                <td>{{ player.time_str }}</td>
+                <td>
+                    <a href="/admin/delete/{{ player.id }}?pass={{ password }}" 
+                       class="btn-delete"
+                       onclick="return confirm('Точно видалити цього гравця?');">
+                       Видалити 🗑️
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

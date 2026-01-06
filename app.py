@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, jsonify, request, session, redirect # <-- Додав redirect
 from sudoku_generator import SudokuGenerator
 import random
 import secrets
@@ -132,3 +133,37 @@ def result():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# ===== АДМІН-ПАНЕЛЬ =====
+
+# Пароль для доступу до адмінки (зміни на свій!)
+ADMIN_PASSWORD = 'admin123'
+
+@app.route('/admin')
+def admin_panel():
+    # Перевірка пароля через URL (наприклад: /admin?pass=admin123)
+    password = request.args.get('pass')
+    
+    if password != ADMIN_PASSWORD:
+        return "⛔ Доступ заборонено! Невірний пароль."
+    
+    # Отримуємо всіх гравців
+    players = PlayerScore.query.order_by(PlayerScore.id.desc()).all()
+    return render_template('admin.html', players=players, password=ADMIN_PASSWORD)
+
+@app.route('/admin/delete/<int:id>')
+def delete_player(id):
+    # Також перевіряємо пароль при видаленні
+    password = request.args.get('pass')
+    
+    if password != ADMIN_PASSWORD:
+        return "⛔ Доступ заборонено!"
+        
+    player_to_delete = PlayerScore.query.get_or_404(id)
+    
+    try:
+        db.session.delete(player_to_delete)
+        db.session.commit()
+        return redirect(f'/admin?pass={ADMIN_PASSWORD}')
+    except:
+        return "Помилка при видаленні"
