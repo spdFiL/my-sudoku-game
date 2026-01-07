@@ -36,9 +36,23 @@
             </div>
             <button class="btn-new-game" onclick="newGame()">Нова гра</button>
         </div>
-    </div>
 
-    <div id="board" class="board"></div>
+        <div class="music-controls">
+            <button class="btn-music" id="btn-prev-track" onclick="musicPlayer.prev()">⏮</button>
+            <button class="btn-music" id="btn-play-pause" onclick="musicPlayer.toggle()">▶</button>
+            <button class="btn-music" id="btn-next-track" onclick="musicPlayer.next()">⏭</button>
+            
+            <div class="music-info" id="track-name">Музика вимкнена</div>
+            
+            <div class="music-wave" id="music-wave" style="opacity: 0;">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+
+    </div> <div id="board" class="board"></div>
 
     <div class="numbers">
         <button class="btn-delete" onclick="setNumber(0)">✖</button>
@@ -70,7 +84,6 @@
 </div>
 
 <script>
-    // Ця змінна створюється сервером і стає доступною для game.js
     const savedPlayerName = "{{ player_name if player_name else '' }}";
 </script>
 

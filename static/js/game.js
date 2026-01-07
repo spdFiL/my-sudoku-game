@@ -1,3 +1,100 @@
+// ===== МУЗИЧНИЙ ПЛЕЄР =====
+const MusicPlayer = {
+    // Впиши сюди назви своїх файлів, які ти закинув у папку static/music
+    playlist: [
+        'track1.mp3',
+        'track2.mp3', 
+        'track3.mp3'
+    ],
+    currentIndex: 0,
+    audio: new Audio(),
+    isPlaying: false,
+
+    init() {
+        this.audio.volume = 0.3; // Гучність 30%
+        
+        // Коли пісня закінчується, вмикаємо наступну
+        this.audio.addEventListener('ended', () => {
+            this.next();
+        });
+        
+        // Оновлюємо інтерфейс
+        this.updateUI();
+    },
+
+    play(index) {
+        if (this.playlist.length === 0) return;
+
+        if (typeof index === 'number') {
+            this.currentIndex = index;
+            // Корекція індексу (циклічність)
+            if (this.currentIndex >= this.playlist.length) this.currentIndex = 0;
+            if (this.currentIndex < 0) this.currentIndex = this.playlist.length - 1;
+            
+            this.audio.src = `/static/music/${this.playlist[this.currentIndex]}`;
+            this.audio.load();
+        }
+
+        this.audio.play().then(() => {
+            this.isPlaying = true;
+            this.updateUI();
+        }).catch(e => console.log("Потрібна взаємодія з користувачем для автоплею"));
+    },
+
+    pause() {
+        this.audio.pause();
+        this.isPlaying = false;
+        this.updateUI();
+    },
+
+    toggle() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            if (!this.audio.src) {
+                this.play(0); 
+            } else {
+                this.play(); 
+            }
+        }
+    },
+
+    next() {
+        this.play(this.currentIndex + 1);
+    },
+
+    prev() {
+        this.play(this.currentIndex - 1);
+    },
+
+    updateUI() {
+        const btn = document.getElementById('btn-play-pause');
+        const info = document.getElementById('track-name');
+        const wave = document.getElementById('music-wave');
+
+        if (this.playlist.length === 0) {
+            info.textContent = "Немає пісень";
+            return;
+        }
+
+        if (this.isPlaying) {
+            btn.textContent = "⏸"; 
+            btn.classList.add('active');
+            info.textContent = `Грає: Трек ${this.currentIndex + 1}`;
+            wave.style.opacity = 1;
+        } else {
+            btn.textContent = "▶"; 
+            btn.classList.remove('active');
+            info.textContent = "На паузі";
+            wave.style.opacity = 0;
+        }
+    }
+};
+
+// Зробимо плеєр доступним глобально
+window.musicPlayer = MusicPlayer;
+
+// ===== ОСНОВНА ЛОГІКА ГРИ =====
 let board = [];
 let selected = null;
 let hints = 3;
@@ -7,7 +104,7 @@ let time = 0;
 let fixedCells = new Set();
 let isGameOver = false;
 let isHintBusy = false;
-let completedNumbers = new Set(); // Зберігає цифри, яких вже є 9 штук
+let completedNumbers = new Set(); 
 
 function resetLivesUI() {
     lives = 3;
@@ -22,7 +119,6 @@ function newGame() {
     selected = null;
     completedNumbers.clear();
     
-    // Скидаємо кнопки
     for (let i = 1; i <= 9; i++) {
         const btn = document.getElementById(`btn-num-${i}`);
         if (btn) btn.classList.remove('btn-disabled');
@@ -42,7 +138,7 @@ function newGame() {
         board.flat().forEach((v, i) => { if (v !== 0) fixedCells.add(i); });
         hints = 3;
         document.getElementById('hints').textContent = hints;
-        updateNumberStatus(false); // Оновлюємо статус, але без анімації на старті
+        updateNumberStatus(false); 
         drawBoard();
         startTimer();
     });
@@ -55,7 +151,6 @@ function drawBoard() {
     const selRow = selected !== null ? Math.floor(selected / 9) : null;
     const selCol = selected !== null ? selected % 9 : null;
     
-    // Отримуємо значення вибраної клітинки для підсвічування однакових
     let selectedValue = null;
     if (selected !== null) {
         selectedValue = board[selRow][selCol];
@@ -71,20 +166,16 @@ function drawBoard() {
             cell.textContent = val;
             cell.classList.add(fixedCells.has(i) ? 'fixed' : 'user-input');
             
-            // Якщо цифра завершена, додаємо їй клас для статики (щоб лишалась зеленою)
             if (completedNumbers.has(val)) {
                 cell.classList.add('fixed-done'); 
             }
         }
 
-        // Логіка підсвічування
         if (selected === i) {
             cell.classList.add('selected');
         } else if (selectedValue !== null && val === selectedValue && val !== 0) {
-            // Підсвічуємо всі такі самі цифри
             cell.classList.add('same-number');
         } else if (r === selRow || c === selCol) {
-            // Підсвічуємо хрест (рядок і стовпець)
             cell.classList.add('highlight');
         }
 
@@ -98,7 +189,6 @@ function drawBoard() {
     });
 }
 
-// Функція для перевірки, чи всі 9 цифр розставлені
 function updateNumberStatus(animate = true) {
     const counts = Array(10).fill(0);
     board.flat().forEach(num => {
@@ -108,19 +198,16 @@ function updateNumberStatus(animate = true) {
     for (let i = 1; i <= 9; i++) {
         const btn = document.getElementById(`btn-num-${i}`);
         
-        // Якщо цифри стало 9 штук
         if (counts[i] >= 9) {
-            // Якщо це сталося вперше (ми ще не зафіксували це)
             if (!completedNumbers.has(i)) {
                 completedNumbers.add(i);
-                btn.classList.add('btn-disabled'); // Робимо кнопку сірою
+                btn.classList.add('btn-disabled'); 
                 
                 if (animate) {
                     animateCompletedNumber(i);
                 }
             }
         } else {
-            // Якщо цифру видалили і їх стало менше 9, повертаємо активність
             if (completedNumbers.has(i)) {
                 completedNumbers.delete(i);
                 btn.classList.remove('btn-disabled');
@@ -129,7 +216,6 @@ function updateNumberStatus(animate = true) {
     }
 }
 
-// Функція анімації для завершеної цифри
 function animateCompletedNumber(num) {
     const cells = document.querySelectorAll('.cell');
     cells.forEach((cell, index) => {
@@ -137,10 +223,9 @@ function animateCompletedNumber(num) {
         const c = index % 9;
         if (board[r][c] === num) {
             cell.classList.add('completed-set');
-            // Прибираємо клас анімації після завершення
             setTimeout(() => {
                 cell.classList.remove('completed-set');
-            }, 800); // Час має збігатися з тривалістю анімації в CSS
+            }, 800); 
         }
     });
 }
@@ -148,18 +233,15 @@ function animateCompletedNumber(num) {
 function setNumber(n) {
     if (isGameOver || selected === null || fixedCells.has(selected)) return;
     
-    // Якщо така цифра вже зібрана (9 штук), забороняємо ставити (окрім стирання 0)
     if (n !== 0 && completedNumbers.has(n)) return;
 
     const r = Math.floor(selected / 9);
     const c = selected % 9;
     
-    // Якщо клікаємо ту ж саму цифру — ігноруємо
     if (board[r][c] === n) return;
     
     board[r][c] = n;
     
-    // Спочатку відправляємо запит на сервер
     fetch('/check_cell', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -167,10 +249,7 @@ function setNumber(n) {
     })
     .then(res => res.json())
     .then(data => {
-        // 1. Спочатку перемальовуємо дошку
         drawBoard(); 
-        
-        // 2. Тепер, коли HTML оновлено, запускаємо перевірку на 9 цифр і анімацію
         updateNumberStatus(true);
 
         if (n !== 0 && !data.correct) {
@@ -189,12 +268,9 @@ function setNumber(n) {
             gameContainer.classList.add('shake-screen');
             setTimeout(() => gameContainer.classList.remove('shake-screen'), 400);
 
-            // ЛОГІКА ПРОГРАШУ
             if (lives <= 0) {
                 isGameOver = true;
                 clearInterval(timerId);
-                
-                // Перенаправлення на сторінку поразки
                 setTimeout(() => {
                     window.location.href = "/result?status=lose";
                 }, 500);
@@ -218,9 +294,8 @@ function getHint() {
             board[data.row][data.col] = data.value;
             hints--;
             document.getElementById('hints').textContent = hints;
-            
-            drawBoard(); // Спочатку малюємо
-            updateNumberStatus(true); // Потім анімуємо, якщо це була остання цифра
+            drawBoard(); 
+            updateNumberStatus(true);
         }
     })
     .finally(() => isHintBusy = false);
@@ -238,9 +313,6 @@ function checkSolution() {
         if (data.correct) {
             isGameOver = true;
             clearInterval(timerId);
-            
-            // ЛОГІКА ПЕРЕМОГИ
-            // Перенаправлення на сторінку перемоги
             setTimeout(() => {
                 window.location.href = "/result?status=win";
             }, 500);
@@ -262,15 +334,8 @@ function startTimer() {
     }, 1000);
 }
 
-document.addEventListener('DOMContentLoaded', newGame);
-
-
-// ... весь твій попередній код ...
-
 // ===== ЛОГІКА РЕЄСТРАЦІЇ =====
-
 function checkRegistration() {
-    // savedPlayerName приходить з HTML (з Python)
     if (!savedPlayerName || savedPlayerName === '') {
         document.getElementById('registration-modal').style.display = 'flex';
     }
@@ -293,14 +358,13 @@ function savePlayerName() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Приховуємо модальне вікно
             document.getElementById('registration-modal').style.display = 'none';
         }
     });
 }
 
-// Модифікуємо запуск гри
 document.addEventListener('DOMContentLoaded', () => {
     newGame();
-    checkRegistration(); // <-- Перевіряємо реєстрацію при старті
+    checkRegistration();
+    MusicPlayer.init(); // <--- Ініціалізація музики
 });
